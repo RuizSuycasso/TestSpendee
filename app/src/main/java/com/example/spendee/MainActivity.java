@@ -65,7 +65,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 drawer.close();
             }
         });
-
     }
 
     private void loadUserInfo() {

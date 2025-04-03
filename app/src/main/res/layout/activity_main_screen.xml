@@ -44,7 +44,7 @@
         android:layout_marginTop="176dp"
         android:text="Đăng nhập"
         app:layout_constraintEnd_toEndOf="parent"
-        android:backgroundTint="@android:color/holo_blue_light"
+        android:backgroundTint="#CA94E7"
         app:layout_constraintHorizontal_bias="0.195"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/password" />
@@ -55,7 +55,7 @@
         android:layout_height="56dp"
         android:layout_marginTop="176dp"
         android:text="Đăng kí"
-        android:backgroundTint="@android:color/holo_blue_light"
+        android:backgroundTint="#CA94E7"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.764"
         app:layout_constraintStart_toStartOf="parent"

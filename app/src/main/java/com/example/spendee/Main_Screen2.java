@@ -15,7 +15,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 public class Main_Screen2 extends AppCompatActivity {
 
-    private EditText edtName, edtUser, edtPhone, edtPassword,edtAddress;
+    private EditText edtName, edtUser, edtPhone, edtPassword, edtAddress;
     private Button btnRegister;
 
     @Override
@@ -36,8 +36,8 @@ public class Main_Screen2 extends AppCompatActivity {
         edtUser = findViewById(R.id.edtUser);
         edtPhone = findViewById(R.id.edtPhone);
         edtPassword = findViewById(R.id.edtPassword);
-        btnRegister = findViewById(R.id.btnRegister);
         edtAddress = findViewById(R.id.edtAddress);
+        btnRegister = findViewById(R.id.btnRegister);
 
         // Khởi tạo last_user_index nếu chưa tồn tại
         SharedPreferences prefs = getSharedPreferences("UserSpendee", MODE_PRIVATE);
@@ -73,7 +73,7 @@ public class Main_Screen2 extends AppCompatActivity {
         editor.putString("phone_" + nextIndex, phone);
         editor.putString("password_" + nextIndex, password);
         editor.putString("address_" + nextIndex, address);
-        editor.putInt("last_user_index", nextIndex + 1); // Tăng index cho người dùng tiếp theo
+        editor.putInt("last_user_index", nextIndex + 1);
         editor.apply();
 
         Toast.makeText(this, "Đăng ký thành công!", Toast.LENGTH_SHORT).show();

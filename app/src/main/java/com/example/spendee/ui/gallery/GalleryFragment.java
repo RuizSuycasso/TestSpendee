@@ -55,7 +55,7 @@ public class GalleryFragment extends Fragment {
     }
 
     private void loadUserInfo() {
-        SharedPreferences prefs = requireActivity().getSharedPreferences("UserPrefs", android.content.Context.MODE_PRIVATE);
+        SharedPreferences prefs = requireActivity().getSharedPreferences("UserSpendee", android.content.Context.MODE_PRIVATE);
 
         // Giả sử bạn đã lưu index của người dùng đang đăng nhập
         int currentUserIndex = prefs.getInt("current_user_index", -1); // -1 là giá trị mặc định nếu không tìm thấy
@@ -81,7 +81,7 @@ public class GalleryFragment extends Fragment {
         String phone = edtPhone.getText().toString().trim();
         String address = edtAddress.getText().toString().trim();
 
-        SharedPreferences prefs = requireActivity().getSharedPreferences("UserPrefs", android.content.Context.MODE_PRIVATE);
+        SharedPreferences prefs = requireActivity().getSharedPreferences("UserSpendee", android.content.Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
 
         int currentUserIndex = prefs.getInt("current_user_index", -1);
@@ -138,7 +138,7 @@ public class GalleryFragment extends Fragment {
         builder.show();
     }
     private void changePassword(String oldPassword, String newPassword, String confirmPassword) {
-        SharedPreferences prefs = requireActivity().getSharedPreferences("UserPrefs", android.content.Context.MODE_PRIVATE);
+        SharedPreferences prefs = requireActivity().getSharedPreferences("UserSpendee", android.content.Context.MODE_PRIVATE);
         int currentUserIndex = prefs.getInt("current_user_index", -1);
 
         if (currentUserIndex != -1) {
