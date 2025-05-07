@@ -1,8 +1,9 @@
-package com.example.spendee;
+package com.example.spendee; // Thay đổi package nếu cần
 
 import android.content.Intent;
-import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -17,12 +18,15 @@ public class Main_Screen2 extends AppCompatActivity {
 
     private EditText edtName, edtUser, edtPhone, edtPassword, edtAddress;
     private Button btnRegister;
+    private AppDatabase db; // Sử dụng AppDatabase
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main_screen2);
+
+        db = AppDatabase.getInstance(this); // Khởi tạo DB instance
 
         // Điều chỉnh padding cho Edge-to-Edge
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -39,19 +43,11 @@ public class Main_Screen2 extends AppCompatActivity {
         edtAddress = findViewById(R.id.edtAddress);
         btnRegister = findViewById(R.id.btnRegister);
 
-        // Khởi tạo last_user_index nếu chưa tồn tại
-        SharedPreferences prefs = getSharedPreferences("UserSpendee", MODE_PRIVATE);
-        if (!prefs.contains("last_user_index")) {
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.putInt("last_user_index", 0);
-            editor.apply();
-        }
-
         // Xử lý sự kiện click nút đăng ký
-        btnRegister.setOnClickListener(v -> registerUser());
+        btnRegister.setOnClickListener(v -> attemptRegisterUser());
     }
 
-    private void registerUser() {
+    private void attemptRegisterUser() {
         String name = edtName.getText().toString().trim();
         String username = edtUser.getText().toString().trim();
         String phone = edtPhone.getText().toString().trim();
@@ -63,23 +59,54 @@ public class Main_Screen2 extends AppCompatActivity {
             return;
         }
 
-        // Lưu thông tin vào SharedPreferences với index
-        SharedPreferences prefs = getSharedPreferences("UserSpendee", MODE_PRIVATE);
-        int nextIndex = prefs.getInt("last_user_index", 0);
+        // Băm mật khẩu trước khi tạo User object
+        String hashedPassword = PasswordHasher.hash(password);
+        if (hashedPassword == null) {
+            Toast.makeText(this, "Lỗi xử lý mật khẩu", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putString("name_" + nextIndex, name);
-        editor.putString("username_" + nextIndex, username);
-        editor.putString("phone_" + nextIndex, phone);
-        editor.putString("password_" + nextIndex, password);
-        editor.putString("address_" + nextIndex, address);
-        editor.putInt("last_user_index", nextIndex + 1);
-        editor.apply();
+        User newUser = new User(name, username, phone, address, hashedPassword);
+        new RegisterUserTask().execute(newUser);
+    }
 
-        Toast.makeText(this, "Đăng ký thành công!", Toast.LENGTH_SHORT).show();
+    // Sử dụng AsyncTask để thực hiện thao tác DB trên background thread
+    private class RegisterUserTask extends AsyncTask<User, Void, Boolean> {
+        private boolean usernameExists = false;
 
-        // Chuyển đến trang đăng nhập
-        startActivity(new Intent(this, Main_Screen.class));
-        finish();
+        @Override
+        protected Boolean doInBackground(User... users) {
+            User userToRegister = users[0];
+            try {
+                // 1. Kiểm tra username đã tồn tại chưa
+                if (db.userDAO().findByUsername(userToRegister.getUsername()) != null) {
+                    usernameExists = true;
+                    return false; // Đăng ký thất bại do trùng username
+                }
+                // 2. Nếu chưa tồn tại, thêm user mới
+                db.userDAO().insert(userToRegister);
+                return true; // Đăng ký thành công
+            } catch (Exception e) {
+                // Log lỗi cụ thể, ví dụ: SQLiteConstraintException nếu bỏ qua kiểm tra trên
+                e.printStackTrace();
+                return false; // Đăng ký thất bại do lỗi DB
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            if (success) {
+                Toast.makeText(Main_Screen2.this, "Đăng ký thành công!", Toast.LENGTH_SHORT).show();
+                // Chuyển về màn hình đăng nhập sau khi đăng ký thành công
+                startActivity(new Intent(Main_Screen2.this, Main_Screen.class));
+                finish(); // Đóng màn hình đăng ký
+            } else {
+                if (usernameExists) {
+                    Toast.makeText(Main_Screen2.this, "Tên đăng nhập đã tồn tại!", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(Main_Screen2.this, "Đăng ký thất bại. Có lỗi xảy ra.", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
     }
 }

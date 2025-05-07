@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="20dp"> <!-- Tăng padding tổng thể -->
 
     <TextView
         android:layout_width="match_parent"
@@ -12,19 +12,27 @@
         android:textSize="20sp"
         android:textStyle="bold"
         android:gravity="center"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="20dp"/> <!-- Tăng khoảng cách dưới -->
 
     <Button
         android:id="@+id/btnIncome"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Thu nhập"
-        android:layout_marginBottom="8dp"/>
+        android:textSize="16sp"
+    android:paddingTop="14dp"
+    android:paddingBottom="14dp"
+    android:minHeight="56dp"
+    android:layout_marginBottom="12dp"/>
 
     <Button
         android:id="@+id/btnExpense"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Chi tiêu"/>
+        android:text="Chi tiêu"
+        android:textSize="16sp"
+    android:paddingTop="14dp"
+    android:paddingBottom="14dp"
+    android:minHeight="56dp"/>
 
 </LinearLayout>

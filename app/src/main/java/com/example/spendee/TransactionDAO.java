@@ -1,28 +1,24 @@
 package com.example.spendee;
 
-
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
-
-
 import java.util.List;
-
 
 @Dao
 public interface TransactionDAO {
+
     @Insert
     void insert(Transaction transaction);
 
-
-    @Query("SELECT * FROM transactions ORDER BY date DESC") // Sử dụng 'date' (tên field)
+    @Query("SELECT * FROM transactions ORDER BY date DESC")
     List<Transaction> getAllTransactions();
 
+    @Query("SELECT * FROM transactions ORDER BY date ASC")
+    List<Transaction> getAllTransactionsOrderedByDateAsc();
 
-    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE isIncome = 1") // Sử dụng 'amount' và 'isIncome' (tên field)
-    double getTotalIncome();
+    // **PHƯƠNG THỨC NÀY LÀ BẮT BUỘC**
+    @Query("SELECT * FROM transactions WHERE date >= :startTime AND date < :endTime ORDER BY date ASC")
+    List<Transaction> getTransactionsForPeriod(long startTime, long endTime);
 
-
-    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE isIncome = 0") // Sử dụng 'amount' và 'isIncome' (tên field)
-    double getTotalExpense();
 }
