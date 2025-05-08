@@ -14,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.spendee.BudgetActivity;
 import com.example.spendee.databinding.FragmentHomeBinding;
 import com.example.spendee.TransactionActivity;
 import com.example.spendee.ReportActivity;
@@ -33,8 +34,8 @@ public class HomeFragment extends Fragment {
 
         homeViewModel.getText().observe(getViewLifecycleOwner(), binding.textHome::setText);
 
-        //Chuyển sang trang thêm giao dịch (sử dụng binding.btn1)
-        if (binding.btn1 != null) { // Kiểm tra null cho btn1 (đề phòng)
+
+        if (binding.btn1 != null) {
             binding.btn1.setOnClickListener(v -> {
                 Log.d(TAG, "btn1 (Thêm giao dịch) clicked");
                 Intent intent = new Intent(requireContext(), TransactionActivity.class);
@@ -44,9 +45,6 @@ public class HomeFragment extends Fragment {
             Log.e(TAG, "binding.btn1 is null!");
         }
 
-
-        // === THÊM CODE ĐỂ CHUYỂN SANG REPORT ACTIVITY VỚI KIỂM TRA NULL ===
-        // Nút "Xem báo cáo chi tiêu" có id là btn2 trong XML, truy cập qua binding.btn2
         if (binding.btn2 != null) {
             binding.btn2.setOnClickListener(v -> {
                 Log.d(TAG, "btn2 (Xem báo cáo) clicked");
@@ -55,10 +53,19 @@ public class HomeFragment extends Fragment {
             });
         } else {
             Log.e(TAG, "binding.btn2 is null! Cannot start ReportActivity.");
-            // Tùy chọn: Hiển thị Toast cho người dùng nếu nút không tìm thấy
-            // Toast.makeText(requireContext(), "Lỗi: Không tìm thấy nút Xem Báo Cáo.", Toast.LENGTH_LONG).show();
         }
-        // === KẾT THÚC CODE THÊM ===
+
+        if (binding.btn4 != null) {
+            binding.btn4.setOnClickListener(v -> {
+                Log.d(TAG, "btn4 (Quản lý chi tiêu) clicked");
+                Intent intentToReport = new Intent(requireContext(), BudgetActivity.class);
+                startActivity(intentToReport);
+            });
+        } else {
+            Log.e(TAG, "binding.btn4 is null! Cannot start ReportActivity.");
+
+        }
+
 
         return root;
     }

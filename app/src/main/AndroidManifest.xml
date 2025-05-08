@@ -12,31 +12,59 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Spendee"
         tools:targetApi="31">
-        <activity
-            android:name=".ReportActivity"
-            android:exported="false" />
-        <activity
-            android:name=".TransactionActivity"
-            android:exported="false" />
-        <activity
-            android:name=".Main_Screen2"
-            android:exported="false"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
-        <activity
-            android:name=".Main_Screen"
-            android:exported="true"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.Spendee.NoActionBar">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+        <!-- Sửa đổi khai báo này -->
         <activity
-            android:name=".MainActivity"
-            android:exported="false"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+            android:name=".BudgetActivity"
+        android:exported="false"
+        android:label="Quản Lý Ngân Sách"
+        android:parentActivityName=".MainActivity">
+        <meta-data
+            android:name="android.support.PARENT_ACTIVITY"
+            android:value=".MainActivity" /> <!-- Đảm bảo khớp parentActivityName -->
+    </activity>
+    <!-- Kết thúc sửa đổi -->
+
+    <activity
+        android:name=".ReportActivity"
+        android:exported="false"
+        android:label="Báo Cáo Chi Tiêu"
+    android:parentActivityName=".MainActivity">
+    <meta-data
+        android:name="android.support.PARENT_ACTIVITY"
+        android:value=".MainActivity" />
+</activity>
+
+<activity
+android:name=".TransactionActivity"
+android:exported="false"
+android:label="Thêm Giao Dịch"
+    android:parentActivityName=".MainActivity">
+<meta-data
+android:name="android.support.PARENT_ACTIVITY"
+android:value=".MainActivity" />
+    </activity>
+
+<activity
+android:name=".Main_Screen2"
+android:exported="false"
+android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+
+<activity
+android:name=".Main_Screen"
+android:exported="true"
+android:label="@string/app_name"
+android:theme="@style/Theme.Spendee.NoActionBar">
+<intent-filter>
+    <action android:name="android.intent.action.MAIN" />
+    <category android:name="android.intent.category.LAUNCHER" />
+</intent-filter>
+</activity>
+
+<activity
+android:name=".MainActivity"
+android:exported="false"
+android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
     </application>
 
-</manifest>
+    </manifest>
