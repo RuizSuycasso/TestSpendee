@@ -17,6 +17,7 @@ activity = "1.8.2" # Phiên bản cho activity-ktx
 room = "2.6.1" # Phiên bản Room
 mpchart = "v3.1.0"
 cardview = "1.0.0"
+activityVersion = "1.10.1"
 
 
 [libraries]
@@ -44,6 +45,7 @@ room-paging = { group = "androidx.room", name = "room-paging", version.ref = "ro
 room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
 # --- Charting ---
 mpandroidchart = { group = "com.github.PhilJay", name = "MPAndroidChart", version.ref = "mpchart" }
+activity = { group = "androidx.activity", name = "activity", version.ref = "activityVersion" }
 
 
 [plugins]

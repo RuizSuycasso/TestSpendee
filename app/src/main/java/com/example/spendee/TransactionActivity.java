@@ -1,21 +1,24 @@
 package com.example.spendee;
 
-// Import cần thiết
-import android.app.DatePickerDialog; // Cần cho chọn tháng/năm
+import android.app.DatePickerDialog;
 import android.app.Dialog;
-import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.DatePicker; // Cần cho DatePickerDialog
+import android.widget.DatePicker;
 import android.widget.EditText;
-import android.widget.TextView; // Cần cho tvSelectedMonth
+import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+// import androidx.recyclerview.widget.LinearLayoutManager; // << XÓA IMPORT
+import androidx.recyclerview.widget.RecyclerView; // << CÓ THỂ XÓA IMPORT NÀY NẾU KHÔNG DÙNG Ở CHỖ KHÁC
 
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.components.XAxis;
@@ -24,11 +27,8 @@ import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
-import com.github.mikephil.charting.formatter.ValueFormatter;
-import com.github.mikephil.charting.interfaces.datasets.IBarDataSet;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-// Các import khác
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -40,65 +40,79 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public class TransactionActivity extends AppCompatActivity {
+
+    private static final String TAG = "TransactionActivity";
+
     private BarChart barChart;
-    private RecyclerView rcvTransactions;
-    private TransactionAdapter transactionAdapter;
-    private List<Transaction> transactionList;
+    // --- XÓA CÁC BIẾN LIÊN QUAN ĐẾN RECYCLERVIEW ---
+    // private RecyclerView rcvTransactions;
+    // private TransactionAdapter transactionAdapter;
+    // private List<Transaction> transactionList;
+    // --- KẾT THÚC XÓA ---
     private FloatingActionButton fabAdd;
     private AppDatabase db;
-    private TextView tvSelectedMonth; // TextView hiển thị/chọn tháng/năm
+    private TextView tvSelectedMonth;
 
-    // Biến lưu tháng/năm đang chọn
     private int currentYear;
-    private int currentMonth; // Tháng bắt đầu từ 0 (Calendar.JANUARY)
+    private int currentMonth;
 
-    // Lưu trữ nhãn ngày cho trục X của biểu đồ
     private final List<String> dateLabels = new ArrayList<>();
-    // Format ngày cho nhãn trục X
     private final SimpleDateFormat dayMonthFormat = new SimpleDateFormat("dd/MM", Locale.getDefault());
+
+    private List<Category> currentCategoryList;
+    private ArrayAdapter<Category> categoryAdapter;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_them_giao_dich); // Dùng layout có tvSelectedMonth
+        setContentView(R.layout.activity_them_giao_dich); // Đảm bảo đã xóa rcv_user khỏi layout này
+        Log.d(TAG, "onCreate: Starting");
 
         db = AppDatabase.getInstance(this);
 
-        // Khởi tạo tháng/năm hiện tại
         Calendar cal = Calendar.getInstance();
         currentYear = cal.get(Calendar.YEAR);
         currentMonth = cal.get(Calendar.MONTH);
 
         initViews();
-        setupRecyclerView();
-        setupBarChart();           // Cấu hình biểu đồ
-        setupMonthSelector();      // Cài đặt click cho chọn tháng
-        updateSelectedMonthText(); // Hiển thị tháng/năm ban đầu
-        loadTransactionsForSelectedMonth(); // Tải dữ liệu cho tháng/năm ban đầu
+        // setupRecyclerView(); // <-- XÓA LỜI GỌI
+        setupBarChart();
+        setupMonthSelector();
+        updateSelectedMonthText();
+        loadTransactionsForSelectedMonth();
         setupFabClick();
+
+        currentCategoryList = new ArrayList<>();
+        categoryAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, currentCategoryList);
+        categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        Log.d(TAG, "onCreate: Category adapter initialized");
     }
 
     private void initViews() {
         barChart = findViewById(R.id.barChart);
-        rcvTransactions = findViewById(R.id.rcv_user);
+        // rcvTransactions = findViewById(R.id.rcv_user); // <-- XÓA DÒNG NÀY
         fabAdd = findViewById(R.id.btnAddTransaction);
-        tvSelectedMonth = findViewById(R.id.tvSelectedMonth); // Ánh xạ TextView chọn tháng
+        tvSelectedMonth = findViewById(R.id.tvSelectedMonth);
     }
 
+    // --- XÓA TOÀN BỘ PHƯƠNG THỨC setupRecyclerView ---
+    /*
     private void setupRecyclerView() {
         transactionList = new ArrayList<>();
         transactionAdapter = new TransactionAdapter(transactionList);
         rcvTransactions.setAdapter(transactionAdapter);
         rcvTransactions.setLayoutManager(new LinearLayoutManager(this));
     }
+    */
+    // --- KẾT THÚC XÓA ---
 
-    // ---- Phần xử lý chọn tháng/năm ----
+    // --- Các phương thức khác giữ nguyên (trừ LoadTransactionsTask.onPostExecute) ---
     private void setupMonthSelector() {
         tvSelectedMonth.setOnClickListener(v -> showMonthYearPicker());
     }
 
     private void updateSelectedMonthText() {
-        // Định dạng hiển thị, ví dụ: "Tháng 07/2024"
         SimpleDateFormat monthYearDisplayFormat = new SimpleDateFormat("MM/yyyy", new Locale("vi", "VN"));
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.YEAR, currentYear);
@@ -107,57 +121,24 @@ public class TransactionActivity extends AppCompatActivity {
     }
 
     private void showMonthYearPicker() {
-        // Sử dụng DatePickerDialog, nhưng chỉ quan tâm đến năm và tháng được chọn
         DatePickerDialog datePickerDialog = new DatePickerDialog(this,
-                // Listener được gọi khi người dùng nhấn OK
                 (view, year, month, dayOfMonth) -> {
-                    // Cập nhật năm và tháng đã chọn
                     currentYear = year;
-                    currentMonth = month; // month trả về từ 0-11
-                    // Cập nhật text hiển thị
+                    currentMonth = month;
                     updateSelectedMonthText();
-                    // Tải lại dữ liệu cho tháng mới được chọn
                     loadTransactionsForSelectedMonth();
                 },
-                // Năm, tháng, ngày ban đầu hiển thị trên dialog
-                currentYear, currentMonth, 1); // Ngày 1 chỉ là giá trị mặc định
-
-        // Tùy chọn: Giới hạn chỉ chọn tháng/năm (có thể không hoạt động trên mọi thiết bị/theme)
-        // Bạn có thể cần thư viện bên ngoài hoặc custom dialog để chỉ chọn tháng/năm tốt hơn
-        /*
-        try {
-            Field[] datePickerDialogFields = datePickerDialog.getClass().getDeclaredFields();
-            for (Field datePickerDialogField : datePickerDialogFields) {
-                if (datePickerDialogField.getName().equals("mDatePicker")) {
-                    datePickerDialogField.setAccessible(true);
-                    DatePicker datePicker = (DatePicker) datePickerDialogField.get(datePickerDialog);
-                    Field[] datePickerFields = datePickerDialogField.getType().getDeclaredFields();
-                    for (Field datePickerField : datePickerFields) {
-                       if ("mDaySpinner".equals(datePickerField.getName()) || "mDayPicker".equals(datePickerField.getName())) {
-                          datePickerField.setAccessible(true);
-                          Object dayPicker = datePickerField.get(datePicker);
-                          ((View) dayPicker).setVisibility(View.GONE);
-                       }
-                    }
-                }
-            }
-        } catch (Exception ex) {
-            // Handle exception if reflection fails
-        }
-        */
-
+                currentYear, currentMonth, 1);
         datePickerDialog.show();
     }
-    // ---- Kết thúc phần xử lý chọn tháng/năm ----
-
 
     private void setupBarChart() {
+        // Giữ nguyên
         barChart.getDescription().setEnabled(false);
         barChart.setDrawGridBackground(false);
         barChart.setDrawBarShadow(false);
         barChart.setHighlightFullBarEnabled(false);
 
-        // --- Trục X (Ngày trong tháng) ---
         XAxis xAxis = barChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setDrawGridLines(false);
@@ -165,47 +146,42 @@ public class TransactionActivity extends AppCompatActivity {
         xAxis.setGranularity(1f);
         xAxis.setCenterAxisLabels(true);
         xAxis.setLabelRotationAngle(-45);
-        // Dùng IndexAxisValueFormatter cho nhãn ngày "dd/MM"
         xAxis.setValueFormatter(new IndexAxisValueFormatter(dateLabels));
 
-        // --- Trục Y (Số tiền - không format) ---
         YAxis leftAxis = barChart.getAxisLeft();
         leftAxis.setDrawGridLines(true);
         leftAxis.setDrawAxisLine(true);
-        leftAxis.setAxisMinimum(0f); // Bắt đầu từ 0
-        leftAxis.setValueFormatter(null); // Không format tiền tệ
+        leftAxis.setAxisMinimum(0f);
+        leftAxis.setValueFormatter(null);
 
         barChart.getAxisRight().setEnabled(false);
-
-        // --- Legend (Thu/Chi) ---
         barChart.getLegend().setEnabled(true);
         barChart.getLegend().setVerticalAlignment(com.github.mikephil.charting.components.Legend.LegendVerticalAlignment.TOP);
         barChart.getLegend().setHorizontalAlignment(com.github.mikephil.charting.components.Legend.LegendHorizontalAlignment.CENTER);
         barChart.getLegend().setOrientation(com.github.mikephil.charting.components.Legend.LegendOrientation.HORIZONTAL);
         barChart.getLegend().setDrawInside(false);
 
-        // --- Tương tác ---
         barChart.setDragEnabled(true);
         barChart.setScaleEnabled(true);
         barChart.setPinchZoom(true);
     }
 
-    // Lớp nội bộ để lưu tổng Thu/Chi cho một ngày
     private static class DailySummary {
         double income = 0.0;
         double expense = 0.0;
     }
 
-    // Phương thức xử lý và vẽ Grouped Bar Chart THEO NGÀY của tháng đã chọn
     private void processAndDrawDailyGroupedChart(List<Transaction> transactions) {
-        // TreeMap để nhóm theo ngày và tự sắp xếp
+        // Giữ nguyên
         Map<Long, DailySummary> dailySummaryMap = new TreeMap<>();
         Calendar cal = Calendar.getInstance();
 
-        // 1. Tính tổng Thu và Chi riêng cho mỗi ngày
+        if (transactions == null) return;
+
         for (Transaction t : transactions) {
+            if (t == null) continue;
             cal.setTimeInMillis(t.getDate());
-            cal.set(Calendar.HOUR_OF_DAY, 0); // Reset giờ phút giây
+            cal.set(Calendar.HOUR_OF_DAY, 0);
             cal.set(Calendar.MINUTE, 0);
             cal.set(Calendar.SECOND, 0);
             cal.set(Calendar.MILLISECOND, 0);
@@ -219,10 +195,9 @@ public class TransactionActivity extends AppCompatActivity {
             }
         }
 
-        // 2. Chuẩn bị dữ liệu cho biểu đồ nhóm
         ArrayList<BarEntry> incomeEntries = new ArrayList<>();
         ArrayList<BarEntry> expenseEntries = new ArrayList<>();
-        dateLabels.clear(); // Xóa nhãn ngày cũ
+        dateLabels.clear();
 
         int index = 0;
         for (Map.Entry<Long, DailySummary> entry : dailySummaryMap.entrySet()) {
@@ -231,43 +206,35 @@ public class TransactionActivity extends AppCompatActivity {
 
             incomeEntries.add(new BarEntry(index, (float) summary.income));
             expenseEntries.add(new BarEntry(index, (float) summary.expense));
-
-            // Tạo nhãn ngày "dd/MM"
             dateLabels.add(dayMonthFormat.format(new Date(dayTimestamp)));
             index++;
         }
 
-        // 3. Cập nhật và vẽ biểu đồ
         if (incomeEntries.isEmpty() && expenseEntries.isEmpty()) {
-            barChart.clear(); // Xóa nếu không có dữ liệu cho tháng
-            barChart.setNoDataText("Không có giao dịch cho tháng này"); // Hiển thị thông báo
+            barChart.clear();
+            barChart.setNoDataText("Không có giao dịch cho tháng này");
             barChart.invalidate();
             return;
         }
 
-        // Tạo DataSet Thu (Màu xanh)
         BarDataSet incomeDataSet = new BarDataSet(incomeEntries, "Thu");
         incomeDataSet.setColor(ContextCompat.getColor(this, android.R.color.holo_green_light));
         incomeDataSet.setDrawValues(false);
 
-        // Tạo DataSet Chi (Màu đỏ)
         BarDataSet expenseDataSet = new BarDataSet(expenseEntries, "Chi");
         expenseDataSet.setColor(ContextCompat.getColor(this, android.R.color.holo_red_light));
         expenseDataSet.setDrawValues(false);
 
-        // Cấu hình cho Grouped Bar Chart
         float groupSpace = 0.1f;
         float barSpace = 0.05f;
-        float barWidth = 0.4f; // (groupSpace + (barSpace + barWidth) * 2 = 1.0)
+        float barWidth = 0.4f;
 
         BarData data = new BarData(incomeDataSet, expenseDataSet);
         data.setBarWidth(barWidth);
 
-        // Cập nhật formatter trục X với nhãn ngày mới
         barChart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(dateLabels));
-        barChart.getXAxis().setLabelCount(dateLabels.size()); // Đặt số lượng nhãn khớp với số ngày
+        barChart.getXAxis().setLabelCount(dateLabels.size());
 
-        // Tính toán lại giới hạn trục X
         if (!dateLabels.isEmpty()) {
             barChart.getXAxis().setAxisMinimum(-0.5f);
             barChart.getXAxis().setAxisMaximum(dateLabels.size() - 0.5f);
@@ -277,36 +244,29 @@ public class TransactionActivity extends AppCompatActivity {
         }
 
         barChart.setData(data);
-
-        // Group các cột lại với nhau
         if (!dateLabels.isEmpty()) {
             barChart.groupBars(-0.5f, groupSpace, barSpace);
         }
-
         barChart.invalidate();
         barChart.animateY(1000);
 
-        // Điều chỉnh view nếu nhiều ngày
-        if (dateLabels.size() > 7) { // Ví dụ: Hiển thị 7 ngày, cho phép cuộn xem thêm
+        if (dateLabels.size() > 7) {
             barChart.setVisibleXRangeMaximum(7.5f);
-            // barChart.moveViewToX(dateLabels.size() - 1); // Có thể không cần di chuyển đến cuối
-            barChart.moveViewToX(0); // Hiển thị từ đầu tháng
+            barChart.moveViewToX(0);
         } else {
-            barChart.fitScreen(); // Hiển thị hết nếu ít ngày
+            barChart.fitScreen();
         }
     }
 
-    // --- Các phương thức tải dữ liệu và thêm giao dịch ---
 
     private void loadTransactionsForSelectedMonth() {
-        // Gọi AsyncTask tải dữ liệu cho tháng đang chọn
+        Log.d(TAG, "loadTransactionsForSelectedMonth: Called for Year: " + currentYear + ", Month: " + currentMonth);
         new LoadTransactionsTask(currentYear, currentMonth).execute();
     }
 
-    // AsyncTask để tải giao dịch cho tháng được chọn
     private class LoadTransactionsTask extends AsyncTask<Void, Void, List<Transaction>> {
         private final int year;
-        private final int month; // 0-11
+        private final int month;
 
         LoadTransactionsTask(int year, int month) {
             this.year = year;
@@ -315,48 +275,69 @@ public class TransactionActivity extends AppCompatActivity {
 
         @Override
         protected List<Transaction> doInBackground(Void... voids) {
+            // Giữ nguyên
+            Log.d(TAG, "LoadTransactionsTask: doInBackground - Started");
             Calendar calStart = Calendar.getInstance();
-            // Đặt ngày về đầu tháng được chọn
             calStart.set(year, month, 1, 0, 0, 0);
             calStart.set(Calendar.MILLISECOND, 0);
             long startTime = calStart.getTimeInMillis();
-
             Calendar calEnd = Calendar.getInstance();
-            calEnd.setTimeInMillis(startTime); // Bắt đầu từ đầu tháng
-            // Đặt ngày về đầu tháng sau -> endTime là đầu tháng sau (không bao gồm)
+            calEnd.setTimeInMillis(startTime);
             calEnd.add(Calendar.MONTH, 1);
             long endTime = calEnd.getTimeInMillis();
-
-            // Gọi DAO để lấy dữ liệu trong khoảng thời gian
-            return db.transactionDAO().getTransactionsForPeriod(startTime, endTime);
+            Log.d(TAG, "LoadTransactionsTask: doInBackground - Querying from " + startTime + " to " + endTime);
+            try {
+                return db.transactionDAO().getTransactionsForPeriod(startTime, endTime);
+            } catch (Exception e) {
+                Log.e(TAG, "LoadTransactionsTask: doInBackground - Error querying transactions", e);
+                return null;
+            }
         }
 
+        // --- SỬA ĐỔI onPostExecute ---
         @Override
         protected void onPostExecute(List<Transaction> transactions) {
-            // Cập nhật RecyclerView và Biểu đồ
+            Log.d(TAG, "LoadTransactionsTask: onPostExecute - Received " + (transactions != null ? transactions.size() : "null") + " transactions.");
             if (transactions != null) {
+                // KHÔNG CẦN CẬP NHẬT RECYCLERVIEW NỮA
+                /*
                 transactionList.clear();
                 List<Transaction> displayList = new ArrayList<>(transactions);
-                Collections.reverse(displayList); // Hiển thị mới nhất trước trong list
+                Collections.reverse(displayList); // Hiển thị mới nhất lên đầu
                 transactionList.addAll(displayList);
-                transactionAdapter.notifyDataSetChanged();
-
-                // Xử lý và vẽ biểu đồ nhóm THEO NGÀY
-                processAndDrawDailyGroupedChart(transactions);
+                if (transactionAdapter != null) {
+                    transactionAdapter.notifyDataSetChanged();
+                    Log.d(TAG, "LoadTransactionsTask: Transaction list updated and adapter notified.");
+                }
+                */
+                processAndDrawDailyGroupedChart(transactions); // Vẫn xử lý cho biểu đồ
+            } else {
+                // VẪN XỬ LÝ LỖI CHO BIỂU ĐỒ
+                // transactionList.clear(); // Không cần thiết nữa
+                // if (transactionAdapter != null) {
+                //     transactionAdapter.notifyDataSetChanged();
+                // }
+                barChart.clear();
+                barChart.setNoDataText("Lỗi tải giao dịch");
+                barChart.invalidate();
+                Toast.makeText(TransactionActivity.this, "Lỗi khi tải giao dịch", Toast.LENGTH_SHORT).show();
             }
-            // Không cần hiển thị Toast nếu không có giao dịch, biểu đồ sẽ tự hiện text
         }
+        // --- KẾT THÚC SỬA ĐỔI ---
     }
 
-    // InsertTransactionTask gọi loadTransactionsForSelectedMonth()
+
     private class InsertTransactionTask extends AsyncTask<Transaction, Void, Void> {
+        // Giữ nguyên
         @Override
         protected Void doInBackground(Transaction... transactions) {
             if (transactions.length > 0 && transactions[0] != null) {
                 try {
+                    Log.d(TAG, "InsertTransactionTask: Inserting transaction with categoryId: " + transactions[0].getCategoryId());
                     db.transactionDAO().insert(transactions[0]);
+                    Log.d(TAG, "InsertTransactionTask: Insertion successful.");
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Log.e(TAG, "InsertTransactionTask: Error inserting transaction", e);
                 }
             }
             return null;
@@ -364,17 +345,18 @@ public class TransactionActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Void unused) {
-            // Tải lại dữ liệu cho tháng hiện tại đang xem sau khi thêm
+            Log.d(TAG, "InsertTransactionTask: onPostExecute - Reloading transactions.");
             loadTransactionsForSelectedMonth();
         }
     }
 
-    // --- Các hàm thêm giao dịch giữ nguyên ---
     private void setupFabClick() {
         fabAdd.setOnClickListener(v -> showTransactionDialog());
     }
+
     private void showTransactionDialog() {
-        Dialog dialog = new Dialog(this);
+        // Giữ nguyên
+        final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.dialog_transaction_type);
         Button btnIncome = dialog.findViewById(R.id.btnIncome);
         Button btnExpense = dialog.findViewById(R.id.btnExpense);
@@ -388,38 +370,104 @@ public class TransactionActivity extends AppCompatActivity {
         });
         dialog.show();
     }
-    private void showAmountDialog(boolean isIncome) {
-        Dialog dialog = new Dialog(this);
+
+    private void showAmountDialog(final boolean isIncome) {
+        // Giữ nguyên (đã xóa logic description ở lần sửa trước)
+        final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.dialog_amount);
-        EditText edtAmount = dialog.findViewById(R.id.edtAmount);
-        EditText edtDescription = dialog.findViewById(R.id.edtDescription);
+
+        final EditText edtAmount = dialog.findViewById(R.id.edtAmount);
+        final Spinner spinnerCategory = dialog.findViewById(R.id.spinnerCategory);
         Button btnConfirm = dialog.findViewById(R.id.btnConfirm);
+
+        spinnerCategory.setAdapter(categoryAdapter);
+        Log.d(TAG, "showAmountDialog: Spinner adapter set.");
+
+        new LoadCategoriesTask(isIncome).execute();
+
         btnConfirm.setOnClickListener(v -> {
+            Log.d(TAG, "showAmountDialog: Confirm button clicked.");
             String amountStr = edtAmount.getText().toString();
-            String description = edtDescription.getText().toString().trim();
-            if (description.isEmpty()){
-                Toast.makeText(this, "Vui lòng nhập mô tả", Toast.LENGTH_SHORT).show();
+
+            Category selectedCategory = (Category) spinnerCategory.getSelectedItem();
+            Integer selectedCategoryId = null;
+
+            if (selectedCategory == null) {
+                Toast.makeText(this, "Vui lòng chọn một danh mục", Toast.LENGTH_SHORT).show();
+                Log.w(TAG, "showAmountDialog: No category selected.");
+                return;
+            } else {
+                selectedCategoryId = selectedCategory.getId();
+                Log.d(TAG, "showAmountDialog: Selected Category: ID=" + selectedCategoryId + ", Name=" + selectedCategory.getName());
+            }
+
+            if (amountStr.isEmpty()) {
+                Toast.makeText(this, "Vui lòng nhập số tiền", Toast.LENGTH_SHORT).show();
                 return;
             }
-            if (!amountStr.isEmpty()) {
-                try {
-                    double amount = Double.parseDouble(amountStr);
-                    if (amount <= 0) {
-                        Toast.makeText(this, "Vui lòng nhập số tiền lớn hơn 0", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    // Thêm giao dịch mới với thời gian hiện tại
-                    Transaction transaction = new Transaction(amount, isIncome, description);
-                    new InsertTransactionTask().execute(transaction);
-                    dialog.dismiss();
-                } catch (NumberFormatException e) {
-                    Toast.makeText(this, "Vui lòng nhập số tiền hợp lệ", Toast.LENGTH_SHORT).show();
+
+            try {
+                double amount = Double.parseDouble(amountStr);
+                if (amount <= 0) {
+                    Toast.makeText(this, "Vui lòng nhập số tiền lớn hơn 0", Toast.LENGTH_SHORT).show();
+                    return;
                 }
-            } else {
-                Toast.makeText(this, "Vui lòng nhập số tiền", Toast.LENGTH_SHORT).show();
+
+                Transaction transaction = new Transaction(amount, isIncome, null, selectedCategoryId);
+                new InsertTransactionTask().execute(transaction);
+                Log.d(TAG, "showAmountDialog: Transaction object created (desc=null) and InsertTask executed.");
+                dialog.dismiss();
+
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "showAmountDialog: Invalid amount format", e);
+                Toast.makeText(this, "Vui lòng nhập số tiền hợp lệ", Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                Log.e(TAG, "showAmountDialog: Error saving transaction", e);
+                Toast.makeText(this, "Lỗi khi lưu giao dịch: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
         dialog.show();
+        Log.d(TAG, "showAmountDialog: Dialog shown for isIncome=" + isIncome);
     }
-    // --- Kết thúc phần giữ nguyên ---
+
+
+    private class LoadCategoriesTask extends AsyncTask<Void, Void, List<Category>> {
+        // Giữ nguyên
+        private final boolean isIncomeType;
+
+        LoadCategoriesTask(boolean isIncomeType) {
+            this.isIncomeType = isIncomeType;
+            Log.d(TAG, "LoadCategoriesTask: Initialized for isIncomeType=" + isIncomeType);
+        }
+
+        @Override
+        protected List<Category> doInBackground(Void... voids) {
+            Log.d(TAG, "LoadCategoriesTask: doInBackground - Started");
+            try {
+                return db.categoryDAO().getCategoriesByType(isIncomeType);
+            } catch (Exception e) {
+                Log.e(TAG, "LoadCategoriesTask: doInBackground - Error querying categories", e);
+                return null;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(List<Category> categories) {
+            Log.d(TAG, "LoadCategoriesTask: onPostExecute - Received " + (categories != null ? categories.size() : "null") + " categories.");
+            if (categories != null) {
+                currentCategoryList.clear();
+                currentCategoryList.addAll(categories);
+                categoryAdapter.notifyDataSetChanged();
+                Log.d(TAG, "LoadCategoriesTask: Category adapter updated and notified.");
+                if (categories.isEmpty()) {
+                    Toast.makeText(TransactionActivity.this, "Không có danh mục nào cho loại giao dịch này.", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                currentCategoryList.clear();
+                categoryAdapter.notifyDataSetChanged();
+                Toast.makeText(TransactionActivity.this, "Lỗi tải danh mục", Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "LoadCategoriesTask: Failed to load categories.");
+            }
+        }
+    }
 }

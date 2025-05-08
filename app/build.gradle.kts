@@ -53,7 +53,6 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation(libs.activity.ktx) // Đã sửa alias trong libs.versions.toml
     implementation(libs.cardview)    // Đã thêm alias trong libs.versions.toml
-
     // Lifecycle Components
     implementation(libs.lifecycle.livedata.ktx)
     implementation(libs.lifecycle.viewmodel.ktx)
@@ -64,6 +63,7 @@ dependencies {
 
     // Room Persistence Library (Sử dụng alias)
     implementation(libs.room.runtime)
+    implementation(libs.activity)
     kapt(libs.room.compiler) // Dùng kapt và alias
     implementation(libs.room.guava)
     implementation(libs.room.paging)
@@ -78,7 +78,6 @@ dependencies {
     testImplementation(libs.room.testing) // Dùng alias
 
 
-    // Khuyến nghị bảo mật (Giữ nguyên)
-    // implementation("at.favre.lib:bcrypt:0.10.2")
-    // implementation("de.mkammerer:argon2-jvm:2.11")
+
+
 }

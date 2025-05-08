@@ -3,17 +3,18 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="20dp"> <!-- Tăng padding tổng thể của Dialog một chút -->
+    android:padding="20dp">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Nhập thông tin giao dịch"
-    android:textSize="20sp"
-    android:textStyle="bold"
-    android:gravity="center"
-    android:layout_marginBottom="20dp"/>
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="20dp"/>
 
+    <!-- EditText Số tiền -->
     <EditText
         android:id="@+id/edtAmount"
         android:layout_width="match_parent"
@@ -21,26 +22,30 @@
         android:inputType="numberDecimal"
         android:hint="Số tiền"
         android:textSize="16sp"
-    android:padding="14dp"
-    android:minHeight="56dp"
-    android:background="@drawable/edit_text_background"
-    android:layout_marginBottom="12dp"/>
+        android:padding="14dp"
+        android:minHeight="56dp"
+        android:background="@drawable/edit_text_background"
+        android:layout_marginBottom="12dp"/>
 
-
-    <EditText
-        android:id="@+id/edtDescription"
+    <!-- Spinner chọn Danh mục -->
+    <Spinner
+        android:id="@+id/spinnerCategory"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Mô tả "
-        android:inputType="textCapSentences"
-    android:textSize="16sp"
-    android:padding="14dp"
-    android:minHeight="56dp"
-    android:background="@drawable/edit_text_background"
-    android:gravity="top|start"
-    android:lines="3"
-    android:maxLines="5"/>
+        android:minHeight="56dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:background="@drawable/edit_text_background"
+        android:layout_marginBottom="20dp"/> <!-- Tăng margin bottom để thay thế khoảng cách của EditText đã xóa -->
 
+    <!-- EditText Mô tả ĐÃ BỊ XÓA -->
+    <!--
+    <EditText
+        android:id="@+id/edtDescription"
+        ... />
+    -->
+
+    <!-- Button Xác nhận -->
     <Button
         android:id="@+id/btnConfirm"
         android:layout_width="match_parent"
@@ -49,6 +54,6 @@
         android:textSize="16sp"
         android:paddingTop="12dp"
         android:paddingBottom="12dp"
-        android:layout_marginTop="24dp"/> <!-- Tăng khoảng cách trên nút -->
+        android:layout_marginTop="16dp"/>
 
 </LinearLayout>
