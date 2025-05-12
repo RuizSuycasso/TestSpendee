@@ -65,25 +65,39 @@
                 android:textSize="14sp"/>
         </LinearLayout>
 
+        <!-- INCLUDE BOX CẢNH BÁO VƯỢT NGÂN SÁCH -->
+        <!-- Đặt layout_warning_budget_exceeded.xml vào đây -->
+        <include
+            android:id="@+id/warning_budget_box"
+            layout="@layout/layout_warning_budget_exceeded"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/layout_month_selector_budget"
+            android:visibility="gone"/> <!-- Thêm thuộc tính visibility="gone" -->
+
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_budgets"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_below="@id/layout_month_selector_budget"
-            android:padding="8dp"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            tools:listitem="@layout/item_budget" />
+            android:layout_below="@id/warning_budget_box"
+        android:padding="8dp"
+        android:layout_marginTop="4dp"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        tools:listitem="@layout/item_budget" />
 
         <TextView
             android:id="@+id/tv_no_budgets"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:text="Chưa có ngân sách nào cho tháng này.\nNhấn + để thêm."
-            android:gravity="center"
-            android:textSize="16sp"
-            android:visibility="gone"
-            tools:visibility="visible"/>
+            android:layout_centerHorizontal="true"
+        android:layout_below="@id/warning_budget_box"
+        android:layout_marginTop="32dp"
+        android:text="Chưa có ngân sách nào cho tháng này.\nNhấn + để thêm."
+        android:gravity="center"
+        android:textSize="16sp"
+        android:visibility="gone"
+        tools:visibility="visible"/>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fab_add_budget"

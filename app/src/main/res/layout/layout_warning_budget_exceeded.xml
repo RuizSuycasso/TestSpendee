@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/warning_box_container"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="12dp"
+    android:background="@drawable/warning_box_background"
+    android:layout_margin="8dp"
+    android:visibility="gone"> <!-- Mặc định ẩn -->
+
+    <!-- Biểu tượng cảnh báo (có thể thay bằng hình hộp thư nếu muốn) -->
+    <ImageView
+        android:id="@+id/img_warning_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_warning"
+        android:contentDescription="Warning Icon"
+        app:tint="@color/warning_icon_color"
+        android:layout_marginEnd="8dp"/> <!-- Khoảng cách giữa icon và text -->
+
+    <!-- Văn bản thông báo -->
+    <TextView
+        android:id="@+id/tv_warning_message"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:text="Có ngân sách bị vượt quá!"
+        android:textColor="@color/warning_text_color"
+        android:textSize="14sp"/>
+
+    <!-- Nút đóng (tùy chọn, có thể thêm ImageButton ở đây) -->
+    <!-- <ImageButton
+        android:id="@+id/btn_close_warning"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@android:drawable/ic_menu_close_clear_cancel"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Close Warning"/> -->
+
+</LinearLayout>

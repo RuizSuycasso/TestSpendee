@@ -12,6 +12,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar; // Thêm import cho Toolbar
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.navigation.NavController;
@@ -47,6 +48,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        // Thiết lập Toolbar làm ActionBar - SỬA LỖI
+        Toolbar toolbar = binding.appBarMain.toolbar;
+        setSupportActionBar(toolbar);
+
         db = AppDatabase.getInstance(this);
         loginPrefs = getSharedPreferences(LOGIN_PREFS_NAME, MODE_PRIVATE);
 
@@ -67,11 +72,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
         // --- KẾT THÚC SỬA LỖI ---
 
-        setSupportActionBar(binding.appBarMain.toolbar);
-        binding.appBarMain.fab.setOnClickListener(view ->
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).setAnchorView(R.id.fab).show());
-
+        binding.appBarMain.fab.setVisibility(View.GONE);
         drawer = binding.drawerLayout;
         NavigationView navigationView = binding.navView;
 

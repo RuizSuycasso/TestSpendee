@@ -9,4 +9,9 @@
     <color name="white">#FFFFFFFF</color>
     <color name="red">#FF0000</color>      <!-- Màu đỏ -->
     <color name="yellow">#FFEB3B</color>   <!-- Màu vàng -->
+    <color name="warning_background_color">#FFF9C4</color> <!-- Vàng nhạt -->
+    <color name="warning_border_color">#FFC107</color> <!-- Vàng đậm hơn -->
+    <color name="warning_icon_color">#FF9800</color> <!-- Cam cho icon -->
+    <color name="warning_text_color">#F57F17</color> <!-- Vàng cam đậm cho text -->
+    <color name="ic_warning">#FF9800</color>
 </resources>
