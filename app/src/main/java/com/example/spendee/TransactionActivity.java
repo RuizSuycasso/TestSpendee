@@ -4,6 +4,8 @@ import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -17,8 +19,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-// import androidx.recyclerview.widget.LinearLayoutManager; // << XÓA IMPORT
-import androidx.recyclerview.widget.RecyclerView; // << CÓ THỂ XÓA IMPORT NÀY NẾU KHÔNG DÙNG Ở CHỖ KHÁC
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.components.XAxis;
@@ -29,6 +30,9 @@ import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -38,17 +42,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 public class TransactionActivity extends AppCompatActivity {
 
     private static final String TAG = "TransactionActivity";
 
     private BarChart barChart;
-    // --- XÓA CÁC BIẾN LIÊN QUAN ĐẾN RECYCLERVIEW ---
-    // private RecyclerView rcvTransactions;
-    // private TransactionAdapter transactionAdapter;
-    // private List<Transaction> transactionList;
-    // --- KẾT THÚC XÓA ---
     private FloatingActionButton fabAdd;
     private AppDatabase db;
     private TextView tvSelectedMonth;
@@ -66,7 +66,7 @@ public class TransactionActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_them_giao_dich); // Đảm bảo đã xóa rcv_user khỏi layout này
+        setContentView(R.layout.activity_them_giao_dich);
         Log.d(TAG, "onCreate: Starting");
 
         db = AppDatabase.getInstance(this);
@@ -76,7 +76,6 @@ public class TransactionActivity extends AppCompatActivity {
         currentMonth = cal.get(Calendar.MONTH);
 
         initViews();
-        // setupRecyclerView(); // <-- XÓA LỜI GỌI
         setupBarChart();
         setupMonthSelector();
         updateSelectedMonthText();
@@ -91,23 +90,10 @@ public class TransactionActivity extends AppCompatActivity {
 
     private void initViews() {
         barChart = findViewById(R.id.barChart);
-        // rcvTransactions = findViewById(R.id.rcv_user); // <-- XÓA DÒNG NÀY
         fabAdd = findViewById(R.id.btnAddTransaction);
         tvSelectedMonth = findViewById(R.id.tvSelectedMonth);
     }
 
-    // --- XÓA TOÀN BỘ PHƯƠNG THỨC setupRecyclerView ---
-    /*
-    private void setupRecyclerView() {
-        transactionList = new ArrayList<>();
-        transactionAdapter = new TransactionAdapter(transactionList);
-        rcvTransactions.setAdapter(transactionAdapter);
-        rcvTransactions.setLayoutManager(new LinearLayoutManager(this));
-    }
-    */
-    // --- KẾT THÚC XÓA ---
-
-    // --- Các phương thức khác giữ nguyên (trừ LoadTransactionsTask.onPostExecute) ---
     private void setupMonthSelector() {
         tvSelectedMonth.setOnClickListener(v -> showMonthYearPicker());
     }
@@ -133,7 +119,6 @@ public class TransactionActivity extends AppCompatActivity {
     }
 
     private void setupBarChart() {
-        // Giữ nguyên
         barChart.getDescription().setEnabled(false);
         barChart.setDrawGridBackground(false);
         barChart.setDrawBarShadow(false);
@@ -172,7 +157,6 @@ public class TransactionActivity extends AppCompatActivity {
     }
 
     private void processAndDrawDailyGroupedChart(List<Transaction> transactions) {
-        // Giữ nguyên
         Map<Long, DailySummary> dailySummaryMap = new TreeMap<>();
         Calendar cal = Calendar.getInstance();
 
@@ -275,7 +259,6 @@ public class TransactionActivity extends AppCompatActivity {
 
         @Override
         protected List<Transaction> doInBackground(Void... voids) {
-            // Giữ nguyên
             Log.d(TAG, "LoadTransactionsTask: doInBackground - Started");
             Calendar calStart = Calendar.getInstance();
             calStart.set(year, month, 1, 0, 0, 0);
@@ -294,41 +277,22 @@ public class TransactionActivity extends AppCompatActivity {
             }
         }
 
-        // --- SỬA ĐỔI onPostExecute ---
         @Override
         protected void onPostExecute(List<Transaction> transactions) {
             Log.d(TAG, "LoadTransactionsTask: onPostExecute - Received " + (transactions != null ? transactions.size() : "null") + " transactions.");
             if (transactions != null) {
-                // KHÔNG CẦN CẬP NHẬT RECYCLERVIEW NỮA
-                /*
-                transactionList.clear();
-                List<Transaction> displayList = new ArrayList<>(transactions);
-                Collections.reverse(displayList); // Hiển thị mới nhất lên đầu
-                transactionList.addAll(displayList);
-                if (transactionAdapter != null) {
-                    transactionAdapter.notifyDataSetChanged();
-                    Log.d(TAG, "LoadTransactionsTask: Transaction list updated and adapter notified.");
-                }
-                */
-                processAndDrawDailyGroupedChart(transactions); // Vẫn xử lý cho biểu đồ
+                processAndDrawDailyGroupedChart(transactions);
             } else {
-                // VẪN XỬ LÝ LỖI CHO BIỂU ĐỒ
-                // transactionList.clear(); // Không cần thiết nữa
-                // if (transactionAdapter != null) {
-                //     transactionAdapter.notifyDataSetChanged();
-                // }
                 barChart.clear();
                 barChart.setNoDataText("Lỗi tải giao dịch");
                 barChart.invalidate();
                 Toast.makeText(TransactionActivity.this, "Lỗi khi tải giao dịch", Toast.LENGTH_SHORT).show();
             }
         }
-        // --- KẾT THÚC SỬA ĐỔI ---
     }
 
 
     private class InsertTransactionTask extends AsyncTask<Transaction, Void, Void> {
-        // Giữ nguyên
         @Override
         protected Void doInBackground(Transaction... transactions) {
             if (transactions.length > 0 && transactions[0] != null) {
@@ -355,7 +319,6 @@ public class TransactionActivity extends AppCompatActivity {
     }
 
     private void showTransactionDialog() {
-        // Giữ nguyên
         final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.dialog_transaction_type);
         Button btnIncome = dialog.findViewById(R.id.btnIncome);
@@ -372,13 +335,128 @@ public class TransactionActivity extends AppCompatActivity {
     }
 
     private void showAmountDialog(final boolean isIncome) {
-        // Giữ nguyên (đã xóa logic description ở lần sửa trước)
         final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.dialog_amount);
 
         final EditText edtAmount = dialog.findViewById(R.id.edtAmount);
         final Spinner spinnerCategory = dialog.findViewById(R.id.spinnerCategory);
         Button btnConfirm = dialog.findViewById(R.id.btnConfirm);
+
+        final DecimalFormatSymbols symbols = new DecimalFormatSymbols(new Locale("vi", "VN"));
+        symbols.setDecimalSeparator(',');
+        symbols.setGroupingSeparator('.');
+        final DecimalFormat formatter = new DecimalFormat("#,###.##", symbols);
+
+
+        edtAmount.addTextChangedListener(new TextWatcher() {
+            private String current = "";
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) { }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (s.toString().equals(current)) {
+                    return;
+                }
+
+                edtAmount.removeTextChangedListener(this);
+
+                int originalSelectionStart = edtAmount.getSelectionStart();
+
+                String cleanString = s.toString().replaceAll("[^0-9,]", "");
+                Log.d(TAG, "afterTextChanged: Clean string after removing non-digits/comma: " + cleanString);
+
+                if (cleanString.isEmpty()) {
+                    current = "";
+                    edtAmount.setText("");
+                    edtAmount.addTextChangedListener(this);
+                    return;
+                }
+
+                if (cleanString.equals(",")) {
+                    cleanString = "0,";
+                } else if (cleanString.startsWith(",")) {
+                    cleanString = "0" + cleanString;
+                }
+
+                int firstComma = cleanString.indexOf(',');
+                if (firstComma != -1) {
+                    String integerPart = cleanString.substring(0, firstComma);
+                    String decimalPart = cleanString.substring(firstComma + 1).replace(",", "");
+                    cleanString = integerPart + (decimalPart.isEmpty() ? "" : "," + decimalPart);
+                }
+
+                double parsed = 0;
+                try {
+                    parsed = formatter.parse(cleanString).doubleValue();
+                    Log.d(TAG, "afterTextChanged: Parsed double value: " + parsed);
+                } catch (ParseException e) {
+                    Log.e(TAG, "afterTextChanged: Failed to parse number: " + cleanString, e);
+                    current = "";
+                    edtAmount.setText("");
+                    edtAmount.addTextChangedListener(this);
+                    Toast.makeText(TransactionActivity.this, "Định dạng số tiền không hợp lệ", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                String formatted = formatter.format(parsed);
+                Log.d(TAG, "afterTextChanged: Formatted string: " + formatted);
+
+                current = formatted;
+                edtAmount.setText(formatted);
+
+                try {
+                    String originalString = s.toString();
+                    String originalCleanBeforeCursor = "";
+                    if (originalSelectionStart > 0) {
+                        originalCleanBeforeCursor = originalString.substring(0, originalSelectionStart).replaceAll("[^0-9,]", "");
+                    }
+
+                    int newCursorPosition = 0;
+                    int cleanCharsMatched = 0;
+
+                    for (int i = 0; i < formatted.length(); i++) {
+                        char c = formatted.charAt(i);
+                        if (Character.isDigit(c) || c == symbols.getDecimalSeparator()) {
+                            if (cleanCharsMatched < originalCleanBeforeCursor.length()) {
+                                cleanCharsMatched++;
+                                newCursorPosition = i + 1;
+                            } else {
+                                newCursorPosition = i;
+                                break;
+                            }
+                        } else {
+                            newCursorPosition = i + 1;
+                        }
+                        if (i == formatted.length() - 1 && cleanCharsMatched < originalCleanBeforeCursor.length()) {
+                            newCursorPosition = formatted.length();
+                        }
+                    }
+
+                    if (originalCleanBeforeCursor.isEmpty()) {
+                        newCursorPosition = 0;
+                    }
+                    if (originalSelectionStart >= originalString.length()) {
+                        newCursorPosition = formatted.length();
+                    }
+
+                    newCursorPosition = Math.max(0, newCursorPosition);
+                    newCursorPosition = Math.min(newCursorPosition, formatted.length());
+
+                    edtAmount.setSelection(newCursorPosition);
+
+                } catch (Exception e) {
+                    Log.e(TAG, "Error calculating cursor position", e);
+                    edtAmount.setSelection(formatted.length());
+                }
+
+                edtAmount.addTextChangedListener(this);
+            }
+        });
 
         spinnerCategory.setAdapter(categoryAdapter);
         Log.d(TAG, "showAmountDialog: Spinner adapter set.");
@@ -389,25 +467,40 @@ public class TransactionActivity extends AppCompatActivity {
             Log.d(TAG, "showAmountDialog: Confirm button clicked.");
             String amountStr = edtAmount.getText().toString();
 
+            final DecimalFormatSymbols confirmSymbols = new DecimalFormatSymbols(new Locale("vi", "VN"));
+
+            String groupingSeparator = String.valueOf(confirmSymbols.getGroupingSeparator());
+            String groupingSeparatorRegex = Pattern.quote(groupingSeparator);
+            String cleanAmountStrForParsing = amountStr.replaceAll(groupingSeparatorRegex, "");
+            Log.d(TAG, "showAmountDialog: After removing grouping separator: " + cleanAmountStrForParsing);
+
+            cleanAmountStrForParsing = cleanAmountStrForParsing.replace(confirmSymbols.getDecimalSeparator(), '.');
+            Log.d(TAG, "showAmountDialog: After replacing decimal separator: " + cleanAmountStrForParsing);
+
+            Log.d(TAG, "showAmountDialog: Final cleaned amount string for parsing: " + cleanAmountStrForParsing);
+
+            if (cleanAmountStrForParsing.isEmpty()) {
+                Toast.makeText(this, "Vui lòng nhập số tiền", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Integer selectedCategoryId = null; // Khai báo ở đây
+
             Category selectedCategory = (Category) spinnerCategory.getSelectedItem();
-            Integer selectedCategoryId = null;
 
             if (selectedCategory == null) {
                 Toast.makeText(this, "Vui lòng chọn một danh mục", Toast.LENGTH_SHORT).show();
                 Log.w(TAG, "showAmountDialog: No category selected.");
                 return;
             } else {
-                selectedCategoryId = selectedCategory.getId();
+                selectedCategoryId = selectedCategory.getId(); // Gán giá trị
                 Log.d(TAG, "showAmountDialog: Selected Category: ID=" + selectedCategoryId + ", Name=" + selectedCategory.getName());
             }
 
-            if (amountStr.isEmpty()) {
-                Toast.makeText(this, "Vui lòng nhập số tiền", Toast.LENGTH_SHORT).show();
-                return;
-            }
 
             try {
-                double amount = Double.parseDouble(amountStr);
+                double amount = Double.parseDouble(cleanAmountStrForParsing);
+
                 if (amount <= 0) {
                     Toast.makeText(this, "Vui lòng nhập số tiền lớn hơn 0", Toast.LENGTH_SHORT).show();
                     return;
@@ -415,12 +508,12 @@ public class TransactionActivity extends AppCompatActivity {
 
                 Transaction transaction = new Transaction(amount, isIncome, null, selectedCategoryId);
                 new InsertTransactionTask().execute(transaction);
-                Log.d(TAG, "showAmountDialog: Transaction object created (desc=null) and InsertTask executed.");
+                Log.d(TAG, "showAmountDialog: Transaction object created and InsertTask executed.");
                 dialog.dismiss();
 
             } catch (NumberFormatException e) {
-                Log.e(TAG, "showAmountDialog: Invalid amount format", e);
-                Toast.makeText(this, "Vui lòng nhập số tiền hợp lệ", Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "showAmountDialog: Invalid amount format during parse (after cleaning)", e);
+                Toast.makeText(this, "Số tiền nhập vào không hợp lệ", Toast.LENGTH_SHORT).show();
             } catch (Exception e) {
                 Log.e(TAG, "showAmountDialog: Error saving transaction", e);
                 Toast.makeText(this, "Lỗi khi lưu giao dịch: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -432,7 +525,6 @@ public class TransactionActivity extends AppCompatActivity {
 
 
     private class LoadCategoriesTask extends AsyncTask<Void, Void, List<Category>> {
-        // Giữ nguyên
         private final boolean isIncomeType;
 
         LoadCategoriesTask(boolean isIncomeType) {

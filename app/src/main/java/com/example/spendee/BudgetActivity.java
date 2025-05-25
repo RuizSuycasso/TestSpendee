@@ -1,10 +1,11 @@
 package com.example.spendee;
 
-// --- CÁC IMPORT CẦN THIẾT ---
 import android.app.Dialog;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -24,6 +25,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -32,7 +36,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Date;
-// --- KẾT THÚC IMPORT ---
+import java.util.regex.Pattern;
 
 
 public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.OnBudgetActionListener {
@@ -45,8 +49,8 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
     private Button btnChangeMonthYearBudget;
     private FloatingActionButton fabAddBudget;
 
-    private View warningBudgetExceededBox; // Biến để giữ tham chiếu đến box cảnh báo (LinearLayout)
-    private TextView tvWarningMessage; // Biến để giữ tham chiếu đến TextView trong box
+    private View warningBudgetExceededBox;
+    private TextView tvWarningMessage;
 
 
     private BudgetAdapter budgetAdapter;
@@ -86,17 +90,15 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
         tvSelectedMonthYearBudget = findViewById(R.id.tv_selected_month_year_budget);
         btnChangeMonthYearBudget = findViewById(R.id.btn_change_month_year_budget);
 
-        // --- Ánh xạ box cảnh báo và TextView bên trong ---
-        warningBudgetExceededBox = findViewById(R.id.warning_budget_box); // Tìm thẻ <include> bằng ID của nó
+        warningBudgetExceededBox = findViewById(R.id.warning_budget_box);
         if (warningBudgetExceededBox != null) {
-            tvWarningMessage = warningBudgetExceededBox.findViewById(R.id.tv_warning_message); // Tìm TextView bên trong layout đã include
+            tvWarningMessage = warningBudgetExceededBox.findViewById(R.id.tv_warning_message);
             if (tvWarningMessage == null) {
                 Log.e(TAG, "TextView tv_warning_message not found inside included layout!");
             }
         } else {
             Log.e(TAG, "Included layout with ID warning_budget_box not found!");
         }
-        // --- Kết thúc ánh xạ ---
 
 
         budgetAdapter = new BudgetAdapter(this, currentBudgetList, this);
@@ -112,8 +114,6 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
 
         loadRequiredData();
 
-        // Lỗi "Cannot resolve method 'showAddEditBudgetDialog'" xảy ra ở đây
-        // vì phương thức showAddEditBudgetDialog chưa được định nghĩa (hoặc bị thiếu)
         fabAddBudget.setOnClickListener(v -> showAddEditBudgetDialog(null));
 
         btnChangeMonthYearBudget.setOnClickListener(v -> showMonthYearPickerDialog());
@@ -135,7 +135,7 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
         final NumberPicker yearPicker = dialogView.findViewById(R.id.picker_year);
 
         if (monthPicker == null || yearPicker == null) {
-            Log.e(TAG, "showMonthYearPickerDialog: monthPicker or yearPicker is null!");
+            Log.e(TAG, "showMonthYearPickerDialog: monthPicker or yearPicker is null.");
             Toast.makeText(this, "Lỗi hiển thị dialog.", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -155,7 +155,7 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
             currentSelectedMonth = monthPicker.getValue() - 1;
             currentSelectedYear = yearPicker.getValue();
             updateSelectedMonthYearDisplay();
-            loadRequiredData(); // Tải lại dữ liệu khi chọn tháng/năm mới
+            loadRequiredData();
         });
         builder.setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss());
         builder.create().show();
@@ -166,7 +166,6 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
         new LoadBudgetDataTask(currentSelectedYear, currentSelectedMonth).execute();
     }
 
-    // --- AsyncTask LoadBudgetDataTask ---
     private class LoadBudgetDataTask extends AsyncTask<Void, Void, List<Budget>> {
         private final int year;
         private final int month;
@@ -181,7 +180,6 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            // Có thể hiển thị ProgressBar tại đây
         }
 
         @Override
@@ -189,12 +187,11 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
             Log.d(TAG, "LoadBudgetDataTask: doInBackground - Started");
             List<Budget> budgetsForMonth = new ArrayList<>();
             try {
-                // 1. Tải tất cả danh mục chi tiêu
                 List<Category> allCategories = db.categoryDAO().getAllCategories();
                 if (allCategories != null) {
                     for (Category cat : allCategories) {
                         localCategoryMap.put(cat.getId(), cat.getName());
-                        if (!cat.isIncomeCategory()) { // Chỉ lấy danh mục chi tiêu
+                        if (!cat.isIncomeCategory()) {
                             localExpenseCategories.add(cat);
                         }
                     }
@@ -202,11 +199,9 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
                     Log.w(TAG, "LoadBudgetDataTask: No categories found.");
                 }
 
-                // 2. Tải ngân sách cho tháng/năm được chọn
                 budgetsForMonth = db.budgetDAO().getBudgetsForMonth(year, month);
                 Log.d(TAG, "LoadBudgetDataTask: Found " + (budgetsForMonth != null ? budgetsForMonth.size() : 0) + " budgets for " + (month+1) + "/" + year);
 
-                // 3. Tính tổng chi tiêu cho từng ngân sách trong tháng
                 Calendar calStart = Calendar.getInstance();
                 calStart.set(year, month, 1, 0, 0, 0);
                 calStart.set(Calendar.MILLISECOND, 0);
@@ -215,7 +210,7 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
                 Calendar calEnd = Calendar.getInstance();
                 calEnd.setTimeInMillis(startTime);
                 calEnd.add(Calendar.MONTH, 1);
-                calEnd.add(Calendar.MILLISECOND, -1); // Kết thúc vào cuối ngày cuối tháng
+                calEnd.add(Calendar.MILLISECOND, -1);
                 long endTime = calEnd.getTimeInMillis();
 
                 Log.d(TAG, "LoadBudgetDataTask: Time range for transactions: " + new Date(startTime) + " to " + new Date(calEnd.getTimeInMillis()));
@@ -223,20 +218,8 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
 
                 if (budgetsForMonth != null) {
                     for (Budget budget : budgetsForMonth) {
-                        // Gán tên danh mục (cho hiển thị)
                         budget.setCategoryName(localCategoryMap.getOrDefault(budget.getCategoryId(), "Không rõ"));
-
-                        // Tính tổng chi tiêu cho danh mục này trong khoảng thời gian
-                        // Đảm bảo chỉ lấy giao dịch LOAI_CHI (hoặc is_income = 0)
-                        // **** CHÚ Ý: Bạn cần có phương thức này trong TransactionDAO của bạn ****
-                        // Ví dụ: getSumOfExpensesForCategoryInPeriodAndType(int categoryId, String type, long startTime, long endTime);
-                        // Hoặc đảm bảo getSumOfExpensesForCategoryInPeriod đã lọc theo LOAI_CHI
-                        // Mình giả định TransactionDAO có phương thức getSumOfExpensesForCategoryInPeriod
-                        // và query bên trong nó đã lọc theo loại chi.
                         Double spent = db.transactionDAO().getSumOfExpensesForCategoryInPeriod(budget.getCategoryId(), startTime, endTime);
-                        // Nếu TransactionDAO của bạn có phương thức lọc theo type:
-                        // Double spent = db.transactionDAO().getSumOfTransactionsForCategoryInPeriodAndType(budget.getCategoryId(), "Chi", startTime, endTime);
-
                         budget.setSpentAmount(spent != null ? spent : 0.0);
                         Log.d(TAG, "LoadBudgetDataTask: Category ID " + budget.getCategoryId() + " spent: " + budget.getSpentAmount() + ", Limit: " + budget.getLimitAmount());
                     }
@@ -244,7 +227,7 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
 
             } catch (Exception e) {
                 Log.e(TAG, "LoadBudgetDataTask: Error loading data", e);
-                return null; // Trả về null nếu có lỗi
+                return null;
             }
             return budgetsForMonth;
         }
@@ -253,27 +236,22 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
         @Override
         protected void onPostExecute(List<Budget> loadedBudgets) {
             Log.d(TAG, "LoadBudgetDataTask: onPostExecute");
-            // Ẩn ProgressBar tại đây (nếu có)
 
-            // Cập nhật danh sách danh mục chi tiêu cho Spinner
             expenseCategoryList.clear();
             expenseCategoryList.addAll(localExpenseCategories);
             categorySpinnerAdapter.notifyDataSetChanged();
 
-            // Cập nhật Map tên danh mục (cho Adapter)
             categoryNameMap = localCategoryMap;
 
             if (loadedBudgets != null) {
                 currentBudgetList.clear();
                 currentBudgetList.addAll(loadedBudgets);
 
-                // --- KIỂM TRA VƯỢT NGÂN SÁCH VÀ HIỂN THỊ BOX CẢNH BÁO ---
                 boolean anyBudgetExceeded = false;
-                StringBuilder exceededCategoriesMessage = new StringBuilder(); // Dùng để liệt kê các danh mục vượt
+                StringBuilder exceededCategoriesMessage = new StringBuilder();
                 int exceededCount = 0;
 
                 for (Budget budget : currentBudgetList) {
-                    // Chỉ kiểm tra nếu hạn mức > 0 và tiền chi > hạn mức
                     if (budget.getLimitAmount() > 0 && budget.getSpentAmount() > budget.getLimitAmount()) {
                         anyBudgetExceeded = true;
                         exceededCount++;
@@ -288,7 +266,6 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
 
                 budgetAdapter.updateData(currentBudgetList);
 
-                // Điều khiển visibility của RecyclerView và No Budgets TextView
                 if (currentBudgetList.isEmpty()) {
                     tvNoBudgets.setVisibility(View.VISIBLE);
                     rvBudgets.setVisibility(View.GONE);
@@ -297,14 +274,12 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
                     rvBudgets.setVisibility(View.VISIBLE);
                 }
 
-                // Hiển thị hoặc ẩn box cảnh báo dựa trên kết quả kiểm tra
-                // Kiểm tra null trước khi truy cập view để tránh crash
                 if (warningBudgetExceededBox != null && tvWarningMessage != null) {
                     if (anyBudgetExceeded) {
-                        tvWarningMessage.setText("⚠️ Đã vượt ngân sách ở các danh mục: " + exceededCategoriesMessage.toString()); // Cập nhật nội dung chi tiết
-                        warningBudgetExceededBox.setVisibility(View.VISIBLE); // Hiển thị box
+                        tvWarningMessage.setText("⚠️ Đã vượt ngân sách ở các danh mục: " + exceededCategoriesMessage.toString());
+                        warningBudgetExceededBox.setVisibility(View.VISIBLE);
                     } else {
-                        warningBudgetExceededBox.setVisibility(View.GONE); // Ẩn box nếu không có ngân sách nào bị vượt
+                        warningBudgetExceededBox.setVisibility(View.GONE);
                     }
                 } else {
                     Log.e(TAG, "Warning box views are null, cannot show/hide warning.");
@@ -312,27 +287,22 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
 
 
             } else {
-                // Xử lý trường hợp tải dữ liệu thất bại
                 Toast.makeText(BudgetActivity.this, "Lỗi khi tải dữ liệu ngân sách", Toast.LENGTH_SHORT).show();
                 tvNoBudgets.setVisibility(View.VISIBLE);
                 rvBudgets.setVisibility(View.GONE);
                 currentBudgetList.clear();
-                budgetAdapter.updateData(currentBudgetList); // Clear adapter data
-                // Đảm bảo ẩn box khi có lỗi tải dữ liệu
+                budgetAdapter.updateData(currentBudgetList);
                 if (warningBudgetExceededBox != null) {
                     warningBudgetExceededBox.setVisibility(View.GONE);
                 }
             }
         }
     }
-    // --- Kết thúc AsyncTask LoadBudgetDataTask ---
 
 
-    // --- Dialog showAddEditBudgetDialog (PHƯƠNG THỨC BỊ THIẾU TRONG LỖI 2) ---
     private void showAddEditBudgetDialog(final Budget existingBudget) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = this.getLayoutInflater();
-        // Đảm bảo bạn có layout dialog_add_edit_budget.xml
         View dialogView = inflater.inflate(R.layout.dialog_add_edit_budget, null);
         builder.setView(dialogView);
 
@@ -342,24 +312,140 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
         final Button btnCancel = dialogView.findViewById(R.id.btn_cancel_budget);
         final TextView tvTitle = dialogView.findViewById(R.id.tv_dialog_budget_title);
 
+        // *** START Thêm TextWatcher để định dạng số tiền ***
+        final DecimalFormatSymbols symbols = new DecimalFormatSymbols(new Locale("vi", "VN"));
+        symbols.setDecimalSeparator(',');
+        symbols.setGroupingSeparator('.');
+        final DecimalFormat formatter = new DecimalFormat("#,###.##", symbols);
+
+        edtAmount.addTextChangedListener(new TextWatcher() {
+            private String current = "";
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) { }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (s.toString().equals(current)) {
+                    return;
+                }
+
+                edtAmount.removeTextChangedListener(this);
+
+                int originalSelectionStart = edtAmount.getSelectionStart();
+
+                String cleanString = s.toString().replaceAll("[^0-9,]", "");
+                // Log.d(TAG, "afterTextChanged: Clean string after removing non-digits/comma: " + cleanString);
+
+                if (cleanString.isEmpty()) {
+                    current = "";
+                    edtAmount.setText("");
+                    edtAmount.addTextChangedListener(this);
+                    return;
+                }
+
+                if (cleanString.equals(",")) {
+                    cleanString = "0,";
+                } else if (cleanString.startsWith(",")) {
+                    cleanString = "0" + cleanString;
+                }
+
+                int firstComma = cleanString.indexOf(',');
+                if (firstComma != -1) {
+                    String integerPart = cleanString.substring(0, firstComma);
+                    String decimalPart = cleanString.substring(firstComma + 1).replace(",", "");
+                    cleanString = integerPart + (decimalPart.isEmpty() ? "" : "," + decimalPart);
+                }
+
+                double parsed = 0;
+                try {
+                    parsed = formatter.parse(cleanString).doubleValue();
+                    // Log.d(TAG, "afterTextChanged: Parsed double value: " + parsed);
+                } catch (ParseException e) {
+                    Log.e(TAG, "afterTextChanged: Failed to parse number: " + cleanString, e);
+                    current = "";
+                    edtAmount.setText("");
+                    edtAmount.addTextChangedListener(this);
+                    // Toast.makeText(BudgetActivity.this, "Định dạng số tiền không hợp lệ", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                String formatted = formatter.format(parsed);
+                // Log.d(TAG, "afterTextChanged: Formatted string: " + formatted);
+
+                current = formatted;
+                edtAmount.setText(formatted);
+
+                try {
+                    String originalString = s.toString();
+                    String originalCleanBeforeCursor = "";
+                    if (originalSelectionStart > 0) {
+                        originalCleanBeforeCursor = originalString.substring(0, originalSelectionStart).replaceAll("[^0-9,]", "");
+                    }
+
+                    int newCursorPosition = 0;
+                    int cleanCharsMatched = 0;
+
+                    for (int i = 0; i < formatted.length(); i++) {
+                        char c = formatted.charAt(i);
+                        if (Character.isDigit(c) || c == symbols.getDecimalSeparator()) {
+                            if (cleanCharsMatched < originalCleanBeforeCursor.length()) {
+                                cleanCharsMatched++;
+                                newCursorPosition = i + 1;
+                            } else {
+                                newCursorPosition = i;
+                                break;
+                            }
+                        } else {
+                            newCursorPosition = i + 1;
+                        }
+                        if (i == formatted.length() - 1 && cleanCharsMatched < originalCleanBeforeCursor.length()) {
+                            newCursorPosition = formatted.length();
+                        }
+                    }
+
+                    if (originalCleanBeforeCursor.isEmpty()) {
+                        newCursorPosition = 0;
+                    }
+                    if (originalSelectionStart >= originalString.length()) {
+                        newCursorPosition = formatted.length();
+                    }
+
+                    newCursorPosition = Math.max(0, newCursorPosition);
+                    newCursorPosition = Math.min(newCursorPosition, formatted.length());
+
+                    edtAmount.setSelection(newCursorPosition);
+
+                } catch (Exception e) {
+                    Log.e(TAG, "Error calculating cursor position", e);
+                    edtAmount.setSelection(formatted.length());
+                }
+
+                edtAmount.addTextChangedListener(this);
+            }
+        });
+        // *** END TextWatcher ***
+
+
         spinnerCategory.setAdapter(categorySpinnerAdapter);
 
         if (existingBudget != null) {
-            // Chế độ Sửa
             tvTitle.setText("Sửa Ngân Sách");
-            edtAmount.setText(String.valueOf(existingBudget.getLimitAmount()));
+            // *** Sửa đổi: Định dạng số tiền hạn mức khi hiển thị để sửa ***
+            edtAmount.setText(formatter.format(existingBudget.getLimitAmount()));
+            // *** End Sửa đổi ***
 
-            // Chọn danh mục đúng trong Spinner
             for (int i = 0; i < expenseCategoryList.size(); i++) {
                 if (expenseCategoryList.get(i).getId() == existingBudget.getCategoryId()) {
                     spinnerCategory.setSelection(i);
                     break;
                 }
             }
-            // Không cho phép sửa danh mục khi sửa ngân sách đã tạo
             spinnerCategory.setEnabled(false);
         } else {
-            // Chế độ Thêm mới
             tvTitle.setText("Thêm Ngân Sách Mới");
             spinnerCategory.setEnabled(true);
         }
@@ -379,28 +465,42 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
                 return;
             }
 
+            // *** START Làm sạch chuỗi đã định dạng trước khi parse cho lưu DB ***
+            final DecimalFormatSymbols confirmSymbols = new DecimalFormatSymbols(new Locale("vi", "VN"));
+            String groupingSeparator = String.valueOf(confirmSymbols.getGroupingSeparator());
+            String groupingSeparatorRegex = Pattern.quote(groupingSeparator);
+            String cleanAmountStrForParsing = amountStr.replaceAll(groupingSeparatorRegex, "");
+
+            cleanAmountStrForParsing = cleanAmountStrForParsing.replace(confirmSymbols.getDecimalSeparator(), '.');
+            // *** END Làm sạch chuỗi ***
+
+
             try {
-                double amount = Double.parseDouble(amountStr);
-                if (amount < 0) { // Cho phép hạn mức bằng 0 nếu người dùng muốn
+                // *** START Parse chuỗi đã làm sạch thành double ***
+                double amount = Double.parseDouble(cleanAmountStrForParsing);
+                // *** END Parse ***
+
+                if (amount < 0) {
                     Toast.makeText(this, "Hạn mức không thể âm", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
                 Budget budgetToSave;
                 if (existingBudget != null) {
-                    // Cập nhật budget hiện có
                     budgetToSave = existingBudget;
                     budgetToSave.setLimitAmount(amount);
                 } else {
-                    // Tạo budget mới
                     budgetToSave = new Budget(selectedCategory.getId(), amount, currentSelectedYear, currentSelectedMonth);
                 }
 
-                // Lưu budget vào DB bằng AsyncTask
                 new SaveBudgetTask().execute(budgetToSave);
-                dialog.dismiss(); // Đóng dialog sau khi lưu
+                dialog.dismiss();
             } catch (NumberFormatException e) {
+                Log.e(TAG, "showAddEditBudgetDialog: Invalid amount format during parse", e);
                 Toast.makeText(this, "Vui lòng nhập số tiền hợp lệ", Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                Log.e(TAG, "showAddEditBudgetDialog: Error saving budget", e);
+                Toast.makeText(this, "Lỗi khi lưu ngân sách: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -408,16 +508,13 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
 
         dialog.show();
     }
-    // --- Kết thúc Dialog showAddEditBudgetDialog ---
 
 
-    // --- AsyncTask SaveBudgetTask ---
     private class SaveBudgetTask extends AsyncTask<Budget, Void, Void> {
         @Override
         protected Void doInBackground(Budget... budgets) {
             if (budgets.length > 0 && budgets[0] != null) {
                 try {
-                    // Sử dụng insertOrUpdate để vừa thêm mới hoặc cập nhật (dựa vào unique index)
                     db.budgetDAO().insertOrUpdate(budgets[0]);
                     Log.d(TAG, "SaveBudgetTask: Budget saved/updated successfully.");
                 } catch (Exception e) {
@@ -429,15 +526,12 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            // Tải lại dữ liệu sau khi lưu thành công để cập nhật UI
             loadRequiredData();
             Toast.makeText(BudgetActivity.this, "Đã lưu ngân sách", Toast.LENGTH_SHORT).show();
         }
     }
-    // --- Kết thúc AsyncTask SaveBudgetTask ---
 
 
-    // --- AsyncTask DeleteBudgetTask ---
     private class DeleteBudgetTask extends AsyncTask<Budget, Void, Void> {
         @Override
         protected Void doInBackground(Budget... budgets) {
@@ -454,19 +548,14 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            // Tải lại dữ liệu sau khi xóa thành công để cập nhật UI
             loadRequiredData();
             Toast.makeText(BudgetActivity.this, "Đã xóa ngân sách", Toast.LENGTH_SHORT).show();
         }
     }
-    // --- Kết thúc AsyncTask DeleteBudgetTask ---
 
-
-    // --- Xử lý sự kiện Adapter (IMPLEMENTATION CỦA OnBudgetActionListener - LỖI 1) ---
     @Override
     public void onEditClick(Budget budget) {
         Log.d(TAG, "onEditClick: Editing budget ID " + budget.getId());
-        // Phương thức showAddEditBudgetDialog được gọi ở đây
         showAddEditBudgetDialog(budget);
     }
 
@@ -482,10 +571,7 @@ public class BudgetActivity extends AppCompatActivity implements BudgetAdapter.O
                 .setNegativeButton("Hủy", null)
                 .show();
     }
-    // --- Kết thúc Xử lý sự kiện Adapter ---
 
-
-    // onOptionsItemSelected giữ nguyên
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
