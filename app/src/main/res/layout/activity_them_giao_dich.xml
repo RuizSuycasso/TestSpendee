@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -8,41 +8,66 @@
     android:layout_height="match_parent"
     tools:context=".TransactionActivity">
 
-    <!-- TextView chọn tháng/năm -->
-    <TextView
-        android:id="@+id/tvSelectedMonth"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="16dp"
-        android:text="Chọn Tháng/Năm"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:padding="10dp"
-        android:background="?attr/selectableItemBackground"
-        android:clickable="true"
-        android:focusable="true"
-        android:gravity="center" />
-
-    <!-- BarChart -->
-
-    <!-- Floating Action Button -->
-
-    <com.github.mikephil.charting.charts.BarChart
-        android:id="@+id/barChart"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="250dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="100dp"
-        android:layout_marginEnd="16dp" />
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvSelectedMonth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Chọn Tháng/Năm"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:padding="10dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center" />
+
+        <com.github.mikephil.charting.charts.BarChart
+            android:id="@+id/barChart"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Phần hiển thị chi tiết chi hàng ngày -->
+        <LinearLayout
+            android:id="@+id/daily_expenses_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tv_daily_expenses_header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Chi tiết chi ngày:"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_daily_expenses"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_daily_expense_detail"
+                tools:itemCount="3"/>
+        </LinearLayout>
+
+    </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btnAddTransaction"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="end|top"
-        android:layout_marginTop="400dp"
-        android:layout_marginEnd="24dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="24dp"
         android:src="@drawable/ic_add" />
 
-</FrameLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

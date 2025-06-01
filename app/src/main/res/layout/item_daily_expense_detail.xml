@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp"
+    android:gravity="center_vertical">
+
+    <TextView
+        android:id="@+id/tv_daily_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:00"
+        android:textSize="14sp"
+        android:minWidth="40dp"
+        android:gravity="center_horizontal"
+        android:layout_marginEnd="8dp"/>
+
+    <TextView
+        android:id="@+id/tv_daily_category"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Tên danh mục"
+        android:textSize="16sp"
+        android:maxLines="1"
+        android:ellipsize="end"/>
+
+    <TextView
+        android:id="@+id/tv_daily_amount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="- 100,000 đ"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:layout_marginStart="8dp"
+        android:textColor="@android:color/holo_red_dark"/>
+
+</LinearLayout>
